@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siber Güvenlik Araç Kutusu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #e8edf1;
+    --panel: #f6f8fa;
+    --ink: #13213b;
+    --muted: #55637a;
+    --line: #b9c4d0;
+    --accent: #0b6e6e;
+    --weak: #b3261e;
+    --mid: #b7791f;
+    --good: #2f7d32;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1624;
+      --panel: #16213a;
+      --ink: #e4ebf5;
+      --muted: #9aa9c0;
+      --line: #2c3b58;
+      --accent: #4cc2c2;
+      --weak: #ff8a80;
+      --mid: #f2c45a;
+      --good: #7fd183;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0; color: var(--ink); background: var(--paper);
+    font-family: var(--sans); line-height: 1.6;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 20px 64px; }
+  header h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; margin: 0 0 12px; letter-spacing: -0.02em; font-weight: 600; }
+  header p { max-width: 60ch; color: var(--muted); margin: 0 0 8px; }
+  .notice { font-size: .9rem; border-left: 3px solid var(--accent); padding-left: 12px; margin-top: 16px; }
+
+  nav { display: flex; gap: 4px; margin: 36px 0 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  nav button {
+    font: inherit; font-weight: 500; color: var(--muted); background: none; border: 0;
+    padding: 10px 16px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  nav button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .btn:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+
+  section.tool { display: none; background: var(--panel); border: 1px solid var(--line); border-top: 0; padding: 28px; }
+  section.tool.active { display: block; }
+  h2 { margin: 0 0 4px; font-size: 1.3rem; }
+  .desc { color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+  label { display: block; font-weight: 500; margin: 16px 0 6px; }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; font: 1rem var(--mono); color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); padding: 10px 12px; border-radius: 4px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .btn {
+    font: 500 .95rem var(--sans); color: #fff; background: var(--accent); border: 0;
+    padding: 9px 18px; border-radius: 4px; cursor: pointer;
+  }
+  @media (prefers-color-scheme: dark) { .btn { color: #0e1624; } }
+  .btn.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
+  .out { font-family: var(--mono); font-size: .92rem; word-break: break-all; background: var(--paper); border: 1px dashed var(--line); padding: 12px; border-radius: 4px; margin-top: 14px; min-height: 46px; }
+
+  .meter { height: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; margin-top: 14px; }
+  .meter > div { height: 100%; width: 0; background: var(--weak); transition: width .25s, background .25s; }
+  .score { display: flex; justify-content: space-between; margin-top: 8px; font-weight: 500; }
+  ul.checks { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 6px; }
+  ul.checks li { padding-left: 26px; position: relative; color: var(--muted); }
+  ul.checks li::before { content: "✗"; position: absolute; left: 0; color: var(--weak); font-weight: 600; }
+  ul.checks li.ok { color: var(--ink); }
+  ul.checks li.ok::before { content: "✓"; color: var(--good); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 20px; margin: 18px 0 0; }
+  dt { color: var(--muted); } dd { margin: 0; font-family: var(--mono); }
+  footer { margin-top: 32px; color: var(--muted); font-size: .88rem; }
+  @media (prefers-reduced-motion: reduce) { .meter > div { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Siber Güvenlik Araç Kutusu</h1>
+    <p>Parola analizi, hash üretme ve Base64 dönüşümü için küçük, tarayıcıda çalışan araçlar.</p>
+    <p class="notice">Girdiğin hiçbir veri sunucuya gönderilmez. Her şey senin tarayıcında hesaplanır.</p>
+  </header>
+
+  <nav role="tablist" aria-label="Araçlar">
+    <button role="tab" aria-selected="true" data-tab="pw">Parola analizi</button>
+    <button role="tab" aria-selected="false" data-tab="hash">Hash üretici</button>
+    <button role="tab" aria-selected="false" data-tab="b64">Base64</button>
+  </nav>
+
+  <!-- Parola analizi -->
+  <section class="tool active" id="pw" role="tabpanel">
+    <h2>Parola analizi</h2>
+    <p class="desc">Uzunluğa, karakter çeşitliliğine ve yaygın kalıplara bakarak parolanın gücünü tahmin eder. Gerçek parolalarını yine de başka sitelere yazma; burada test için benzer bir örnek kullan.</p>
+    <label for="pwIn">Parola</label>
+    <input type="password" id="pwIn" autocomplete="off" spellcheck="false">
+    <div class="row"><button class="btn ghost" id="pwToggle" type="button">Göster</button></div>
+    <div class="meter" aria-hidden="true"><div id="pwBar"></div></div>
+    <div class="score"><span id="pwLabel">Bir parola yaz</span><span id="pwBits"></span></div>
+    <ul class="checks" id="pwChecks"></ul>
+    <dl>
+      <dt>Tahmini kırılma süresi</dt><dd id="pwTime">-</dd>
+    </dl>
+    <p class="desc" style="margin-top:14px;font-size:.85rem">Süre, çevrimdışı saldırıda saniyede 10 milyar deneme yapıldığı varsayımına dayanır. Kaba bir tahmindir.</p>
+  </section>
+
+  <!-- Hash -->
+  <section class="tool" id="hash" role="tabpanel">
+    <h2>Hash üretici</h2>
+    <p class="desc">Bir metnin özetini (hash) üretir. Dosya bütünlüğü kontrolü ve parolaların neden düz metin saklanmaması gerektiğini anlamak için iyi bir deneme alanı.</p>
+    <label for="hashIn">Metin</label>
+    <textarea id="hashIn" spellcheck="false"></textarea>
+    <label for="hashAlgo">Algoritma</label>
+    <select id="hashAlgo">
+      <option>SHA-256</option>
+      <option>SHA-512</option>
+      <option>SHA-1</option>
+    </select>
+    <div class="out" id="hashOut" aria-live="polite"></div>
+    <div class="row"><button class="btn ghost" id="hashCopy" type="button">Kopyala</button></div>
+    <p class="desc" style="margin-top:14px;font-size:.85rem">SHA-1 artık güvenli sayılmaz. Parola saklamak için hızlı hash yerine bcrypt, scrypt veya Argon2 kullanılır.</p>
+  </section>
+
+  <!-- Base64 -->
+  <section class="tool" id="b64" role="tabpanel">
+    <h2>Base64 kodla / çöz</h2>
+    <p class="desc">Base64 bir şifreleme değil, kodlamadır. Herkes geri çevirebilir. CTF sorularında ve log analizinde sık karşına çıkar.</p>
+    <label for="b64In">Girdi</label>
+    <textarea id="b64In" spellcheck="false"></textarea>
+    <div class="row">
+      <button class="btn" id="b64Enc" type="button">Kodla</button>
+      <button class="btn ghost" id="b64Dec" type="button">Çöz</button>
+    </div>
+    <div class="out" id="b64Out" aria-live="polite"></div>
+  </section>
+
+  <footer>Yalnızca eğitim ve savunma amaçlıdır.</footer>
+</div>
+
+<script>
+(function () {
+  // ---------- Sekmeler ----------
+  const tabs = document.querySelectorAll('nav button');
+  tabs.forEach(btn => btn.addEventListener('click', () => {
+    tabs.forEach(b => b.setAttribute('aria-selected', b === btn));
+    document.querySelectorAll('section.tool').forEach(s => s.classList.toggle('active', s.id === btn.dataset.tab));
+  }));
+
+  // ---------- Parola analizi ----------
+  const common = ['password','parola','sifre','şifre','123456','12345678','qwerty','abc123','letmein','admin','welcome','iloveyou','111111','000000','istanbul','ankara','galatasaray','fenerbahce','besiktas','trabzonspor'];
+  const pwIn = document.getElementById('pwIn');
+  const bar = document.getElementById('pwBar');
+
+  function formatTime(sec) {
+    if (sec < 1) return 'anında';
+    const units = [['yıl', 31557600], ['gün', 86400], ['saat', 3600], ['dakika', 60], ['saniye', 1]];
+    if (sec > 31557600 * 1e9) return 'evrenin yaşından uzun';
+    for (const [name, size] of units) {
+      if (sec >= size) {
+        const v = sec / size;
+        return (v >= 1e6 ? v.toExponential(1) : Math.round(v).toLocaleString('tr-TR')) + ' ' + name;
+      }
+    }
+  }
+
+  function analyze(pw) {
+    const has = {
+      lower: /[a-zçğıöşü]/.test(pw),
+      upper: /[A-ZÇĞİÖŞÜ]/.test(pw),
+      digit: /\d/.test(pw),
+      symbol: /[^A-Za-z0-9çğıöşüÇĞİÖŞÜ\s]/.test(pw)
+    };
+    let pool = 0;
+    if (has.lower) pool += 29;
+    if (has.upper) pool += 29;
+    if (has.digit) pool += 10;
+    if (has.symbol) pool += 32;
+    let bits = pw.length * Math.log2(Math.max(pool, 1));
+
+    const lower = pw.toLowerCase();
+    const isCommon = common.some(w => lower.includes(w));
+    const repeats = /(.)\1{2,}/.test(pw);
+    const sequence = /(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer|asdf|zxcv)/i.test(pw);
+
+    if (isCommon) bits *= 0.5;
+    if (repeats) bits *= 0.8;
+    if (sequence) bits *= 0.8;
+
+    return { has, bits, isCommon, repeats, sequence };
+  }
+
+  function renderPw() {
+    const pw = pwIn.value;
+    const list = document.getElementById('pwChecks');
+    if (!pw) {
+      bar.style.width = '0'; list.innerHTML = '';
+      document.getElementById('pwLabel').textContent = 'Bir parola yaz';
+      document.getElementById('pwBits').textContent = '';
+      document.getElementById('pwTime').textContent = '-';
+      return;
+    }
+    const r = analyze(pw);
+    const pct = Math.min(100, Math.round(r.bits / 80 * 100));
+    let label, color;
+    if (r.bits < 40) { label = 'Zayıf'; color = 'var(--weak)'; }
+    else if (r.bits < 60) { label = 'Orta'; color = 'var(--mid)'; }
+    else if (r.bits < 80) { label = 'Güçlü'; color = 'var(--good)'; }
+    else { label = 'Çok güçlü'; color = 'var(--good)'; }
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+    document.getElementById('pwLabel').textContent = label;
+    document.getElementById('pwBits').textContent = Math.round(r.bits) + ' bit';
+    document.getElementById('pwTime').textContent = formatTime(Math.pow(2, r.bits) / 2 / 1e10);
+
+    const checks = [
+      [pw.length >= 12, 'En az 12 karakter'],
+      [r.has.lower && r.has.upper, 'Büyük ve küçük harf'],
+      [r.has.digit, 'Rakam içeriyor'],
+      [r.has.symbol, 'Özel karakter içeriyor'],
+      [!r.isCommon, 'Yaygın bir kelime içermiyor'],
+      [!r.repeats && !r.sequence, 'Tekrar veya ardışık dizi yok']
+    ];
+    list.innerHTML = checks.map(([ok, text]) => `<li class="${ok ? 'ok' : ''}">${text}</li>`).join('');
+  }
+  pwIn.addEventListener('input', renderPw);
+  document.getElementById('pwToggle').addEventListener('click', e => {
+    const show = pwIn.type === 'password';
+    pwIn.type = show ? 'text' : 'password';
+    e.target.textContent = show ? 'Gizle' : 'Göster';
+  });
+
+  // ---------- Hash ----------
+  const hashIn = document.getElementById('hashIn');
+  const hashAlgo = document.getElementById('hashAlgo');
+  const hashOut = document.getElementById('hashOut');
+  async function renderHash() {
+    if (!hashIn.value) { hashOut.textContent = ''; return; }
+    const data = new TextEncoder().encode(hashIn.value);
+    const buf = await crypto.subtle.digest(hashAlgo.value, data);
+    hashOut.textContent = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  hashIn.addEventListener('input', renderHash);
+  hashAlgo.addEventListener('change', renderHash);
+  document.getElementById('hashCopy').addEventListener('click', e => {
+    if (!hashOut.textContent) return;
+    navigator.clipboard.writeText(hashOut.textContent).then(() => {
+      e.target.textContent = 'Kopyalandı';
+      setTimeout(() => (e.target.textContent = 'Kopyala'), 1500);
+    });
+  });
+
+  // ---------- Base64 ----------
+  const b64In = document.getElementById('b64In');
+  const b64Out = document.getElementById('b64Out');
+  document.getElementById('b64Enc').addEventListener('click', () => {
+    const bytes = new TextEncoder().encode(b64In.value);
+    let bin = '';
+    bytes.forEach(b => (bin += String.fromCharCode(b)));
+    b64Out.textContent = btoa(bin);
+  });
+  document.getElementById('b64Dec').addEventListener('click', () => {
+    try {
+      const bin = atob(b64In.value.trim());
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      b64Out.textContent = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (err) {
+      b64Out.textContent = 'Geçerli bir Base64 metni değil.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
